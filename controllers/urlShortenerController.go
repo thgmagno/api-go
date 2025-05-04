@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/thgmagno/api-go/requests"
@@ -16,7 +18,7 @@ func ShortenUrl(c *gin.Context) {
 		return
 	}
 
-	urlShortener, err := services.ShortenUrl(req.URL)
+	shortUrl, err := services.ShortenUrl(req.URL)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"status":  "erro",
@@ -25,9 +27,24 @@ func ShortenUrl(c *gin.Context) {
 		return
 	}
 
+	urlData := map[string]string{
+		"short":    shortUrl,
+		"original": req.URL,
+	}
+
+	dataJson, err := json.Marshal(urlData)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"status":  "erro",
+			"message": "Erro ao processar dados",
+		})
+	}
+
+	services.Redis.LPush(services.Ctx, "urls_shortened", dataJson)
+
 	c.JSON(200, gin.H{
 		"status": "sucesso",
-		"url":    urlShortener,
+		"url":    shortUrl,
 	})
 }
 
@@ -54,4 +71,41 @@ func RedirectToOriginalUrl(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusMovedPermanently, originalUrl)
+}
+
+func RecentlyShortenedUrls(c *gin.Context) {
+	takeParam := c.DefaultQuery("take", "10")
+	take, err := strconv.ParseInt(takeParam, 10, 64)
+	if err != nil || take <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "erro",
+			"message": "Parâmetro 'take' inválido",
+		})
+		return
+	}
+
+	urls, err := services.Redis.LRange(services.Ctx, "urls_shortened", 0, take-1).Result()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "erro",
+			"message": "Erro ao buscar URLs recentes",
+		})
+		return
+	}
+
+	total, err := services.Redis.LLen(services.Ctx, "urls_shortened").Result()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "erro",
+			"message": "Erro ao verificar total de URLs",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "sucesso",
+		"message": "",
+		"urls":    urls,
+		"total":   total,
+	})
 }
