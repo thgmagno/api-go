@@ -11,6 +11,7 @@ func SetupRouter() *gin.Engine {
 	r.POST("/shorten-url", controllers.ShortenUrl)
 	r.GET("/short", controllers.RedirectToOriginalUrl)
 	r.GET("/recently-shortened", controllers.RecentlyShortenedUrls)
+	r.GET("/flush-all", controllers.FlushAll)
 
 	return r
 }

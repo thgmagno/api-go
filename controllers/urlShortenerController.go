@@ -109,3 +109,19 @@ func RecentlyShortenedUrls(c *gin.Context) {
 		"total":   total,
 	})
 }
+
+func FlushAll(c *gin.Context) {
+	err := services.Redis.FlushDB(services.Ctx).Err()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "erro",
+			"message": "Erro ao limpar o banco Redis.",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "sucesso",
+		"message": "Todos os dados foram removidos com sucesso.",
+	})
+}
