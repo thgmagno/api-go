@@ -1,0 +1,28 @@
+# Arquivos de ambiente
+.env
+
+# Binários gerados
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Diretórios comuns
+/vendor/
+/bin/
+/dist/
+
+# Cache do Go
+*.log
+*.tmp
+*.cache
+
+# Arquivos de sistema/editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
